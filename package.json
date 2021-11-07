@@ -1,0 +1,23 @@
+{
+  "name": "proceduralcars",
+  "version": "1.0.0",
+  "description": "Procedurally generated cars using three.js",
+  "source": "src/index.html",
+  "scripts": {
+    "build": "parcel build --log-level verbose --no-cache",
+    "lint": "prettier -c --loglevel warn ./src && eslint ./src",
+    "start": "parcel"
+  },
+  "author": "Jonas Nockert",
+  "license": "ISC",
+  "dependencies": {
+    "parcel": "^2.0.0",
+    "three": "^0.134.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.2.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.4.1"
+  }
+}
