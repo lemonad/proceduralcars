@@ -12,6 +12,13 @@ import {
 import { gaussian, skewNormal, truncatedSkewNormal } from "./random";
 
 export function proceduralCar() {
+  const adjustYForWheels = (v, frontCenter, rearCenter, radiusDiff) => {
+    const deltaX = rearCenter.x - frontCenter.x;
+    const deltaY = radiusDiff;
+    const delta = deltaY / deltaX;
+    v.setY(v.y + (v.x - frontCenter.x) * delta);
+  };
+
   //             4  Δe   5
   //             +-------+
   //          Δd/         \Δf
@@ -67,19 +74,53 @@ export function proceduralCar() {
     -truncatedSkewNormal(0, 0.1, 0, 0.2),
   );
 
-  const p1 = new Vector3();
-  const p2 = new Vector3().addVectors(p1, deltaB);
-  const p3 = new Vector3().addVectors(p2, deltaC);
-  const p4 = new Vector3().addVectors(p3, deltaD);
-  const p5 = new Vector3().addVectors(p4, deltaE);
-  const p6 = new Vector3().addVectors(p5, deltaF);
-  const p7 = new Vector3().addVectors(p6, deltaG);
+  let p1 = new Vector3();
+  let p2 = new Vector3().addVectors(p1, deltaB);
+  let p3 = new Vector3().addVectors(p2, deltaC);
+  let p4 = new Vector3().addVectors(p3, deltaD);
+  let p5 = new Vector3().addVectors(p4, deltaE);
+  let p6 = new Vector3().addVectors(p5, deltaF);
+  let p7 = new Vector3().addVectors(p6, deltaG);
   const deltaH = new Vector3(
     truncatedSkewNormal(0, 0.05, -0.05, 0.1, 0.05),
     p1.y - p7.y,
     0,
   );
-  const p8 = new Vector3().addVectors(p7, deltaH);
+  let p8 = new Vector3().addVectors(p7, deltaH);
+
+  const carLength = Math.max(p7.x, p8.x) - Math.min(p1.x, p2.x);
+
+  const averageHoodHeight = (p2.y + p3.y) / 2;
+  const averageTrunkHeight = (p6.y + p7.y) / 2;
+  const wheelMaxRadius = Math.min(averageHoodHeight, averageTrunkHeight) * 0.9;
+  const frontWheelRadius = truncatedSkewNormal(
+    0.4,
+    0.2,
+    wheelMaxRadius * 0.5,
+    wheelMaxRadius,
+  );
+  const rearWheelRadius = truncatedSkewNormal(
+    0.4,
+    0.2,
+    frontWheelRadius,
+    averageTrunkHeight * 0.9,
+  );
+  console.log(
+    "wheel",
+    averageHoodHeight,
+    frontWheelRadius,
+    averageTrunkHeight,
+    rearWheelRadius,
+  );
+
+  const wheelRadiusDiff = rearWheelRadius - frontWheelRadius;
+  const frontWheelCenter = new Vector3(p1.x + 0.7, 0);
+  const rearWheelCenter = new Vector3(p8.x - 0.6, wheelRadiusDiff);
+
+  [p1, p2, p3, p4, p5, p6, p7, p8].forEach((v) =>
+    adjustYForWheels(v, frontWheelCenter, rearWheelCenter, wheelRadiusDiff),
+  );
+
   const delta1 = new Vector3((p1.x - p8.x) / 2, 0, -1);
   p1.add(delta1);
   p2.add(delta1);
@@ -89,6 +130,8 @@ export function proceduralCar() {
   p6.add(delta1);
   p7.add(delta1);
   p8.add(delta1);
+  frontWheelCenter.add(delta1);
+  rearWheelCenter.add(delta1);
 
   const delta = new Vector3(0, 0, 0);
   const p1z = p1.clone().setZ(-p1.z).add(delta);
@@ -205,18 +248,38 @@ export function proceduralCar() {
     color: 0x222222,
   });
   const car = new Mesh(geometry, carMaterial);
-  const backLeftTireGeometry = new CylinderGeometry(0.4, 0.4, 0.35, 16)
+  const backLeftTireGeometry = new CylinderGeometry(
+    rearWheelRadius,
+    rearWheelRadius,
+    0.35,
+    16,
+  )
     .rotateX(Math.PI / 2)
-    .translate(p8.x - 0.6, 0, 1);
-  const backRightTireGeometry = new CylinderGeometry(0.4, 0.4, 0.35, 16)
+    .translate(rearWheelCenter.x, rearWheelCenter.y, 1);
+  const backRightTireGeometry = new CylinderGeometry(
+    rearWheelRadius,
+    rearWheelRadius,
+    0.35,
+    16,
+  )
     .rotateX(Math.PI / 2)
-    .translate(p8.x - 0.6, 0, -1);
-  const frontLeftTireGeometry = new CylinderGeometry(0.4, 0.4, 0.35, 16)
+    .translate(rearWheelCenter.x, rearWheelCenter.y, -1);
+  const frontLeftTireGeometry = new CylinderGeometry(
+    frontWheelRadius,
+    frontWheelRadius,
+    0.35,
+    16,
+  )
     .rotateX(Math.PI / 2)
-    .translate(p1.x + 0.7, 0, 1);
-  const frontRightTireGeometry = new CylinderGeometry(0.4, 0.4, 0.35, 16)
+    .translate(frontWheelCenter.x, frontWheelCenter.y, 1);
+  const frontRightTireGeometry = new CylinderGeometry(
+    frontWheelRadius,
+    frontWheelRadius,
+    0.35,
+    16,
+  )
     .rotateX(Math.PI / 2)
-    .translate(p1.x + 0.7, 0, -1);
+    .translate(frontWheelCenter.x, frontWheelCenter.y, -1);
   const backLeftTire = new Mesh(backLeftTireGeometry, tireMaterial);
   const backRightTire = new Mesh(backRightTireGeometry, tireMaterial);
   const frontLeftTire = new Mesh(frontLeftTireGeometry, tireMaterial);
