@@ -4,9 +4,10 @@ import {
   CylinderGeometry,
   DoubleSide,
   Float32BufferAttribute,
-  Group,
   Mesh,
   MeshPhongMaterial,
+  SpotLight,
+  SpotLightHelper,
   Vector3,
 } from "three";
 import { gaussian, skewNormal, truncatedSkewNormal } from "./random";
@@ -57,17 +58,17 @@ export function proceduralCar() {
   const deltaD = new Vector3(
     truncatedSkewNormal(0.3, 0.3, -0.1, 0.7),
     truncatedSkewNormal(0.5, 0.2, 0.35, 0.8),
-    0.1,
+    truncatedSkewNormal(0.1, 0.1, 0, 0.5),
   );
   const deltaE = new Vector3(
     truncatedSkewNormal(1.75, 0.5, 1.0, 3),
     truncatedSkewNormal(0, 0.2, -0.2, 0.2),
-    0.0,
+    truncatedSkewNormal(0, 0.5, -deltaD.z, 1.5),
   );
   const deltaF = new Vector3(
     truncatedSkewNormal(0.4, 0.2, 0, 1.0, -0.1),
     -truncatedSkewNormal(0.5, 0.2, 0.35, deltaD.y),
-    -0.1,
+    -(deltaD.z + deltaE.z),
   );
   const deltaG = new Vector3(
     truncatedSkewNormal(0.6, 0.4, 0.2, 1.7),
@@ -105,20 +106,20 @@ export function proceduralCar() {
     frontWheelRadius,
     averageTrunkHeight * 0.9,
   );
-  console.log(
-    "wheel",
-    averageHoodHeight,
-    frontWheelRadius,
-    averageTrunkHeight,
-    rearWheelRadius,
-  );
-
   const wheelRadiusDiff = rearWheelRadius - frontWheelRadius;
   const frontWheelCenter = new Vector3(p1.x + 0.7, 0);
   const rearWheelCenter = new Vector3(p8.x - 0.6, wheelRadiusDiff);
 
   [p1, p2, p3, p4, p5, p6, p7, p8].forEach((v) =>
     adjustYForWheels(v, frontWheelCenter, rearWheelCenter, wheelRadiusDiff),
+  );
+
+  const frontWheelWidth = truncatedSkewNormal(0.3, 0.025, 0.2, 0.35);
+  const rearWheelWidth = truncatedSkewNormal(
+    frontWheelWidth,
+    0.1,
+    frontWheelWidth,
+    0.5,
   );
 
   const delta1 = new Vector3((p1.x - p8.x) / 2, 0, -1);
@@ -160,11 +161,12 @@ export function proceduralCar() {
     p6,
     // left upper side.
     p3,
-    p5,
+    p6,
     p4,
-    p3,
+    p4,
     p6,
     p5,
+
     // right lower side.
     p1z,
     p2z,
@@ -181,8 +183,8 @@ export function proceduralCar() {
     // right upper side.
     p3z,
     p4z,
-    p5z,
-    p3z,
+    p6z,
+    p4z,
     p5z,
     p6z,
     // lower front.
@@ -234,6 +236,13 @@ export function proceduralCar() {
     p8,
     p7z,
     p8z,
+    // Under.
+    p1,
+    p1z,
+    p8,
+    p1z,
+    p8,
+    p8z,
   ].flatMap((p) => p.toArray());
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
   geometry.computeVertexNormals();
@@ -251,7 +260,7 @@ export function proceduralCar() {
   const backLeftTireGeometry = new CylinderGeometry(
     rearWheelRadius,
     rearWheelRadius,
-    0.35,
+    rearWheelWidth,
     16,
   )
     .rotateX(Math.PI / 2)
@@ -259,7 +268,7 @@ export function proceduralCar() {
   const backRightTireGeometry = new CylinderGeometry(
     rearWheelRadius,
     rearWheelRadius,
-    0.35,
+    rearWheelWidth,
     16,
   )
     .rotateX(Math.PI / 2)
@@ -267,7 +276,7 @@ export function proceduralCar() {
   const frontLeftTireGeometry = new CylinderGeometry(
     frontWheelRadius,
     frontWheelRadius,
-    0.35,
+    frontWheelWidth,
     16,
   )
     .rotateX(Math.PI / 2)
@@ -275,21 +284,83 @@ export function proceduralCar() {
   const frontRightTireGeometry = new CylinderGeometry(
     frontWheelRadius,
     frontWheelRadius,
-    0.35,
+    frontWheelWidth,
     16,
   )
     .rotateX(Math.PI / 2)
     .translate(frontWheelCenter.x, frontWheelCenter.y, -1);
-  const backLeftTire = new Mesh(backLeftTireGeometry, tireMaterial);
-  const backRightTire = new Mesh(backRightTireGeometry, tireMaterial);
+  const rearLeftTire = new Mesh(backLeftTireGeometry, tireMaterial);
+  const rearRightTire = new Mesh(backRightTireGeometry, tireMaterial);
   const frontLeftTire = new Mesh(frontLeftTireGeometry, tireMaterial);
   const frontRightTire = new Mesh(frontRightTireGeometry, tireMaterial);
 
-  const group = new Group();
-  group.add(car);
-  group.add(backLeftTire);
-  group.add(backRightTire);
-  group.add(frontLeftTire);
-  group.add(frontRightTire);
-  return group;
+  const leftHeadlight = new SpotLight(
+    0xffffff,
+    1, // Intensity.
+    20, // Maximum distance.
+    Math.PI / 20, // Angle.
+    0.5, // Penumbra.
+    2, // Decay (2 is physically correct).
+  );
+  leftHeadlight.position.set(p1.x, p1.y + 0.2, p1.z + 0.2);
+  leftHeadlight.castShadow = true;
+  leftHeadlight.target.position.set(p1.x - 1, p1.y + 0.12, p1.z + 0.2);
+  car.add(leftHeadlight);
+  car.add(leftHeadlight.target);
+
+  const rightHeadlight = new SpotLight(
+    0xffffff,
+    1, // Intensity.
+    20, // Maximum distance.
+    Math.PI / 20, // Angle.
+    0.5, // Penumbra.
+    2, // Decay (2 is physically correct).
+  );
+  rightHeadlight.position.set(p1z.x, p1z.y + 0.2, p1z.z - 0.2);
+  rightHeadlight.castShadow = true;
+  rightHeadlight.target.position.set(p1z.x - 1, p1z.y + 0.12, p1z.z - 0.2);
+  car.add(rightHeadlight);
+  car.add(rightHeadlight.target);
+
+  const leftTaillight = new SpotLight(
+    0xff4444,
+    0.8, // Intensity.
+    4, // Maximum distance.
+    Math.PI / 8, // Angle.
+    0.5, // Penumbra.
+    2, // Decay (2 is physically correct).
+  );
+  leftTaillight.position.set(p8.x, p8.y + 0.2, p8.z + 0.2);
+  leftTaillight.castShadow = true;
+  leftTaillight.target.position.set(p8.x + 1, p8.y + 0.2, p8.z + 0.2);
+  car.add(leftTaillight);
+  car.add(leftTaillight.target);
+
+  const rightTaillight = new SpotLight(
+    0xff4444,
+    0.8, // Intensity.
+    4, // Maximum distance.
+    Math.PI / 8, // Angle.
+    0.5, // Penumbra.
+    2, // Decay (2 is physically correct).
+  );
+  rightTaillight.position.set(p8z.x, p8z.y + 0.2, p8z.z - 0.2);
+  rightTaillight.castShadow = true;
+  rightTaillight.target.position.set(p8z.x + 1, p8z.y + 0.2, p8z.z - 0.2);
+  car.add(rightTaillight);
+  car.add(rightTaillight.target);
+
+  const leftHeadlightHelper = new SpotLightHelper(leftHeadlight);
+  const rightHeadlightHelper = new SpotLightHelper(rightHeadlight);
+  const leftTaillightHelper = new SpotLightHelper(leftTaillight);
+  const rightTaillightHelper = new SpotLightHelper(rightTaillight);
+
+  car.add(rearLeftTire, rearRightTire, frontLeftTire, frontRightTire);
+  return [
+    car,
+    leftHeadlightHelper,
+    rightHeadlightHelper,
+    leftTaillightHelper,
+    rightTaillightHelper,
+  ];
 }

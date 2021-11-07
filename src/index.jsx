@@ -5,7 +5,11 @@ import {
   Scene,
   WebGLRenderer,
 } from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { proceduralCar } from "./car";
+
+const useLightHelpers = false;
 
 const verticalFov = 40;
 const aspectRatio = window.innerWidth / window.innerHeight;
@@ -17,7 +21,9 @@ let app = {
   scene: null,
   renderer: null,
   camera: null,
+  composer: null,
   cars: [],
+  lightHelpers: [],
 };
 
 const init = () => {
@@ -35,6 +41,11 @@ const init = () => {
   app.camera.lookAt(0, 0, 0);
   app.renderer = new WebGLRenderer();
   app.renderer.setSize(window.innerWidth, window.innerHeight);
+
+  app.composer = new EffectComposer(app.renderer);
+  const renderPass = new RenderPass(app.scene, app.camera);
+  app.composer.addPass(renderPass);
+
   app.el.appendChild(app.renderer.domElement);
 
   const color = 0xffffff;
@@ -45,11 +56,27 @@ const init = () => {
 
   for (let x = -1; x < 2; x++) {
     for (let y = -1; y < 2; y++) {
-      const car = proceduralCar();
+      const [
+        car,
+        leftHeadlightHelper,
+        rightHeadlightHelper,
+        leftTaillightHelper,
+        rightTaillightHelper,
+      ] = proceduralCar();
       car.position.x = x * 5;
       car.position.y = y * 3;
       app.cars.push(car);
       app.scene.add(car);
+      if (useLightHelpers) {
+        app.lightHelpers.push(leftHeadlightHelper);
+        app.scene.add(leftHeadlightHelper);
+        app.lightHelpers.push(rightHeadlightHelper);
+        app.scene.add(rightHeadlightHelper);
+        app.lightHelpers.push(leftTaillightHelper);
+        app.scene.add(leftTaillightHelper);
+        app.lightHelpers.push(rightTaillightHelper);
+        app.scene.add(rightTaillightHelper);
+      }
     }
   }
 };
@@ -59,8 +86,11 @@ const animate = () => {
   for (const c of app.cars) {
     c.rotation.y += 0.01;
   }
+  for (const lh of app.lightHelpers) {
+    lh.update();
+  }
 
-  app.renderer.render(app.scene, app.camera);
+  app.composer.render();
 };
 
 init();
