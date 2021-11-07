@@ -1,4 +1,5 @@
 import {
+  BoxGeometry,
   BufferGeometry,
   Color,
   CylinderGeometry,
@@ -293,6 +294,57 @@ export function proceduralCar() {
   const rearRightTire = new Mesh(backRightTireGeometry, tireMaterial);
   const frontLeftTire = new Mesh(frontLeftTireGeometry, tireMaterial);
   const frontRightTire = new Mesh(frontRightTireGeometry, tireMaterial);
+
+  const headlightFixtureMaterial = new MeshPhongMaterial({
+    color: 0xffffff,
+  });
+  const leftHeadlightFixtureGeometry = new CylinderGeometry(0.12, 0.12, 0.02, 8)
+    .rotateZ(Math.PI / 2)
+    .translate(p1.x - 0.01, (p2.y + p1.y) / 2, p1.z + 0.2);
+  const leftHeadlightFixture = new Mesh(
+    leftHeadlightFixtureGeometry,
+    headlightFixtureMaterial,
+  );
+  car.add(leftHeadlightFixture);
+
+  const rightHeadlightFixtureGeometry = new CylinderGeometry(
+    0.12,
+    0.12,
+    0.02,
+    8,
+  )
+    .rotateZ(Math.PI / 2)
+    .translate(p1z.x - 0.01, (p2z.y + p1z.y) / 2, p1z.z - 0.2);
+  const rightHeadlightFixture = new Mesh(
+    rightHeadlightFixtureGeometry,
+    headlightFixtureMaterial,
+  );
+  car.add(rightHeadlightFixture);
+
+  const taillightFixtureMaterial = new MeshPhongMaterial({
+    color: 0xff4444,
+  });
+  const leftTaillightFixtureGeometry = new BoxGeometry(
+    0.02,
+    0.12,
+    0.22,
+  ).translate(p8.x + 0.01, (p7.y + p8.y) / 2, p8.z + 0.3);
+  const leftTaillightFixture = new Mesh(
+    leftTaillightFixtureGeometry,
+    taillightFixtureMaterial,
+  );
+  car.add(leftTaillightFixture);
+
+  const rightTaillightFixtureGeometry = new BoxGeometry(
+    0.02,
+    0.12,
+    0.22,
+  ).translate(p8z.x + 0.01, (p7z.y + p8z.y) / 2, p8z.z - 0.3);
+  const rightTaillightFixture = new Mesh(
+    rightTaillightFixtureGeometry,
+    taillightFixtureMaterial,
+  );
+  car.add(rightTaillightFixture);
 
   const leftHeadlight = new SpotLight(
     0xffffff,
