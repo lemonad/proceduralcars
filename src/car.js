@@ -7,13 +7,14 @@ import {
   Float32BufferAttribute,
   Mesh,
   MeshPhongMaterial,
+  Object3D,
   SpotLight,
   SpotLightHelper,
   Vector3,
 } from "three";
 import { gaussian, skewNormal, truncatedSkewNormal } from "./random";
 
-export function proceduralCar() {
+export function proceduralCar(withLights = false) {
   const adjustYForWheels = (v, frontCenter, rearCenter, radiusDiff) => {
     const deltaX = rearCenter.x - frontCenter.x;
     const deltaY = radiusDiff;
@@ -346,73 +347,73 @@ export function proceduralCar() {
   );
   car.add(rightTaillightFixture);
 
-  const leftHeadlight = new SpotLight(
-    0xffffff,
-    1, // Intensity.
-    20, // Maximum distance.
-    Math.PI / 20, // Angle.
-    0.5, // Penumbra.
-    2, // Decay (2 is physically correct).
-  );
-  leftHeadlight.position.set(p1.x, p1.y + 0.2, p1.z + 0.2);
-  leftHeadlight.castShadow = true;
-  leftHeadlight.target.position.set(p1.x - 1, p1.y + 0.12, p1.z + 0.2);
-  car.add(leftHeadlight);
-  car.add(leftHeadlight.target);
+  if (withLights) {
+    const leftHeadlight = new SpotLight(
+      0xffffff,
+      1, // Intensity.
+      20, // Maximum distance.
+      Math.PI / 20, // Angle.
+      0.5, // Penumbra.
+      2, // Decay (2 is physically correct).
+    );
+    leftHeadlight.position.set(p1.x, p1.y + 0.2, p1.z + 0.2);
+    leftHeadlight.castShadow = true;
+    leftHeadlight.target.position.set(p1.x - 1, p1.y + 0.12, p1.z + 0.2);
+    car.add(leftHeadlight);
+    car.add(leftHeadlight.target);
 
-  const rightHeadlight = new SpotLight(
-    0xffffff,
-    1, // Intensity.
-    20, // Maximum distance.
-    Math.PI / 20, // Angle.
-    0.5, // Penumbra.
-    2, // Decay (2 is physically correct).
-  );
-  rightHeadlight.position.set(p1z.x, p1z.y + 0.2, p1z.z - 0.2);
-  rightHeadlight.castShadow = true;
-  rightHeadlight.target.position.set(p1z.x - 1, p1z.y + 0.12, p1z.z - 0.2);
-  car.add(rightHeadlight);
-  car.add(rightHeadlight.target);
+    const rightHeadlight = new SpotLight(
+      0xffffff,
+      1, // Intensity.
+      20, // Maximum distance.
+      Math.PI / 20, // Angle.
+      0.5, // Penumbra.
+      2, // Decay (2 is physically correct).
+    );
+    rightHeadlight.position.set(p1z.x, p1z.y + 0.2, p1z.z - 0.2);
+    rightHeadlight.castShadow = true;
+    rightHeadlight.target.position.set(p1z.x - 1, p1z.y + 0.12, p1z.z - 0.2);
+    car.add(rightHeadlight);
+    car.add(rightHeadlight.target);
 
-  const leftTaillight = new SpotLight(
-    0xff4444,
-    0.8, // Intensity.
-    4, // Maximum distance.
-    Math.PI / 8, // Angle.
-    0.5, // Penumbra.
-    2, // Decay (2 is physically correct).
-  );
-  leftTaillight.position.set(p8.x, p8.y + 0.2, p8.z + 0.2);
-  leftTaillight.castShadow = true;
-  leftTaillight.target.position.set(p8.x + 1, p8.y + 0.2, p8.z + 0.2);
-  car.add(leftTaillight);
-  car.add(leftTaillight.target);
+    const leftTaillight = new SpotLight(
+      0xff4444,
+      1, // Intensity.
+      4, // Maximum distance.
+      Math.PI / 8, // Angle.
+      0.5, // Penumbra.
+      0.25, // Decay (2 is physically correct).
+    );
+    leftTaillight.position.set(p8.x, p8.y + 0.2, p8.z + 0.2);
+    leftTaillight.castShadow = true;
+    leftTaillight.target.position.set(p8.x + 1, p8.y + 0.2, p8.z + 0.2);
+    car.add(leftTaillight);
+    car.add(leftTaillight.target);
 
-  const rightTaillight = new SpotLight(
-    0xff4444,
-    0.8, // Intensity.
-    4, // Maximum distance.
-    Math.PI / 8, // Angle.
-    0.5, // Penumbra.
-    2, // Decay (2 is physically correct).
-  );
-  rightTaillight.position.set(p8z.x, p8z.y + 0.2, p8z.z - 0.2);
-  rightTaillight.castShadow = true;
-  rightTaillight.target.position.set(p8z.x + 1, p8z.y + 0.2, p8z.z - 0.2);
-  car.add(rightTaillight);
-  car.add(rightTaillight.target);
+    const rightTaillight = new SpotLight(
+      0xff4444,
+      1, // Intensity.
+      4, // Maximum distance.
+      Math.PI / 8, // Angle.
+      0.5, // Penumbra.
+      0.25, // Decay (2 is physically correct).
+    );
+    rightTaillight.position.set(p8z.x, p8z.y + 0.0, p8z.z - 0.2);
+    rightTaillight.castShadow = true;
+    rightTaillight.target.position.set(p8z.x + 1, p8z.y + 0, p8z.z - 0.2);
+    car.add(rightTaillight);
+    car.add(rightTaillight.target);
+  }
 
-  const leftHeadlightHelper = new SpotLightHelper(leftHeadlight);
-  const rightHeadlightHelper = new SpotLightHelper(rightHeadlight);
-  const leftTaillightHelper = new SpotLightHelper(leftTaillight);
-  const rightTaillightHelper = new SpotLightHelper(rightTaillight);
+  // const leftHeadlightHelper = new SpotLightHelper(leftHeadlight);
+  // const rightHeadlightHelper = new SpotLightHelper(rightHeadlight);
+  // const leftTaillightHelper = new SpotLightHelper(leftTaillight);
+  // const rightTaillightHelper = new SpotLightHelper(rightTaillight);
 
   car.add(rearLeftTire, rearRightTire, frontLeftTire, frontRightTire);
-  return [
-    car,
-    leftHeadlightHelper,
-    rightHeadlightHelper,
-    leftTaillightHelper,
-    rightTaillightHelper,
-  ];
+  car.translateY(frontWheelRadius);
+
+  const root = new Object3D();
+  root.add(car);
+  return root;
 }

@@ -1,6 +1,9 @@
 First attempt at procedurally generating low poly cars.
 
-## Some examples
+## Screenshot
+![ScreenShot1](./examples/road.png)
+
+## Some cars
 ![ScreenShot1](./examples/cars1.png)
 
 ![ScreenShot2](./examples/cars2.png)

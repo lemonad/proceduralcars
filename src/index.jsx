@@ -1,6 +1,7 @@
 import {
   Color,
   DirectionalLight,
+  Object3D,
   PerspectiveCamera,
   Scene,
   WebGLRenderer,
@@ -8,6 +9,7 @@ import {
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
 import { proceduralCar } from "./car";
+import { road } from "./road";
 
 const useLightHelpers = false;
 
@@ -22,22 +24,21 @@ let app = {
   renderer: null,
   camera: null,
   composer: null,
-  cars: [],
+  leftLaneCars: [],
+  rightLaneCars: [],
   lightHelpers: [],
 };
 
 const init = () => {
   app.scene = new Scene();
-  app.scene.background = new Color(0xaaaaaa);
+  app.scene.background = new Color(0x348868);
   app.camera = new PerspectiveCamera(
     verticalFov,
     aspectRatio,
     nearDistance,
     farDistance,
   );
-  app.camera.position.z = 15;
-  app.camera.position.y = 2;
-  app.camera.position.x = 0;
+  app.camera.position.set(20, 10, 20);
   app.camera.lookAt(0, 0, 0);
   app.renderer = new WebGLRenderer();
   app.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -49,48 +50,81 @@ const init = () => {
   app.el.appendChild(app.renderer.domElement);
 
   const color = 0xffffff;
-  const intensity = 1;
+  const intensity = 1.0;
   const light = new DirectionalLight(color, intensity);
-  light.position.set(-1, 2, 4);
+  light.castShadow = true;
+  light.position.set(20, 20, 40);
   app.scene.add(light);
 
-  for (let x = -1; x < 2; x++) {
-    for (let y = -1; y < 2; y++) {
-      const [
-        car,
-        leftHeadlightHelper,
-        rightHeadlightHelper,
-        leftTaillightHelper,
-        rightTaillightHelper,
-      ] = proceduralCar();
-      car.position.x = x * 5;
-      car.position.y = y * 3;
-      app.cars.push(car);
-      app.scene.add(car);
-      if (useLightHelpers) {
-        app.lightHelpers.push(leftHeadlightHelper);
-        app.scene.add(leftHeadlightHelper);
-        app.lightHelpers.push(rightHeadlightHelper);
-        app.scene.add(rightHeadlightHelper);
-        app.lightHelpers.push(leftTaillightHelper);
-        app.scene.add(leftTaillightHelper);
-        app.lightHelpers.push(rightTaillightHelper);
-        app.scene.add(rightTaillightHelper);
-      }
-    }
-  }
+  const roadMesh = road();
+  app.scene.add(roadMesh);
 };
 
 const animate = () => {
   requestAnimationFrame(animate);
-  for (const c of app.cars) {
-    c.rotation.y += 0.01;
+
+  if (app.rightLaneCars.length !== 0 && app.rightLaneCars[0].position.x > 50) {
+    removeObject3D(app.rightLaneCars[0]);
+    app.rightLaneCars.shift();
   }
-  for (const lh of app.lightHelpers) {
-    lh.update();
+
+  if (
+    app.rightLaneCars.length === 0 ||
+    app.rightLaneCars[app.rightLaneCars.length - 1].position.x > -41
+  ) {
+    const car = proceduralCar();
+    car.position.set(-50, 0, 2);
+    car.rotateY(Math.PI);
+    app.rightLaneCars.push(car);
+    app.scene.add(car);
+  }
+
+  for (const c of app.rightLaneCars) {
+    c.position.x += 0.15;
+  }
+
+  if (app.leftLaneCars.length !== 0 && app.leftLaneCars[0].position.x < -50) {
+    removeObject3D(app.leftLaneCars[0]);
+    app.leftLaneCars.shift();
+  }
+
+  if (
+    app.leftLaneCars.length === 0 ||
+    app.leftLaneCars[app.leftLaneCars.length - 1].position.x < 41
+  ) {
+    const car = proceduralCar();
+    car.position.set(50, 0, -2);
+    app.leftLaneCars.push(car);
+    app.scene.add(car);
+  }
+
+  for (const c of app.leftLaneCars) {
+    c.position.x -= 0.2;
   }
 
   app.composer.render();
+};
+
+const removeObject3D = (object) => {
+  if (!(object instanceof Object3D)) return false;
+  // for better memory management and performance
+  if (object.geometry) {
+    object.geometry.dispose();
+  }
+  if (object.material) {
+    if (object.material instanceof Array) {
+      // for better memory management and performance
+      object.material.forEach((material) => material.dispose());
+    } else {
+      // for better memory management and performance
+      object.material.dispose();
+    }
+  }
+  if (object.parent) {
+    object.parent.remove(object);
+  }
+  // the parent might be the scene or another Object3D, but it is sure to be removed this way
+  return true;
 };
 
 init();
