@@ -9,6 +9,7 @@ import {
   PCFSoftShadowMap,
   PerspectiveCamera,
   Scene,
+  Vector3,
   WebGLRenderer,
 } from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -42,7 +43,7 @@ let app = {
 const init = () => {
   app.scene = new Scene();
   app.scene.background = new Color(0x348868);
-  app.scene.fog = new Fog(0x348868, 45, 55);
+  app.scene.fog = new Fog(0x348868, 45, 50);
 
   app.camera = new PerspectiveCamera(
     verticalFov,
@@ -50,10 +51,12 @@ const init = () => {
     nearDistance,
     farDistance,
   );
-  app.camera.position.set(10, 5, 0);
+  app.camera.position.set(10, 2, -5);
   app.camera.enableRotate = true;
+  // app.camera.useTarget = true;
+  // app.scene.add(app.camera.target);
   app.camera.lookAt(0, 0, 0);
-  app.camera.rotation.z = Math.PI / 2;
+  // app.camera.rotation.z = Math.PI / 2;
   app.renderer = new WebGLRenderer();
   app.renderer.setSize(window.innerWidth, window.innerHeight);
   app.renderer.shadowMap.enabled = true;
@@ -76,12 +79,10 @@ const init = () => {
 
   app.el.appendChild(app.renderer.domElement);
 
-  const ambientLight = new AmbientLight(0x404040); // soft white light
+  const ambientLight = new AmbientLight(0x404040, 0.5); // soft white light
   app.scene.add(ambientLight);
 
-  const color = 0xffffff;
-  const intensity = 0.5;
-  const light = new DirectionalLight(color, intensity);
+  const light = new DirectionalLight(0xffffff, 0.5);
   light.position.set(0.0, 4, -2.8);
   light.castShadow = true;
 
@@ -98,10 +99,31 @@ const init = () => {
   app.hero = proceduralCar(true);
   app.hero.position.set(9, 0, -5);
   app.scene.add(app.hero);
+
+  const heroCameraPos = new Vector3();
+  heroCameraPos.add(app.hero.position);
+  heroCameraPos.add(app.hero.driverPos);
+  // heroCameraPos.add(new Vector3(3.5, 2.4, 0));
+  // app.hero.position + app.hero.driverPos + new Vector3(0, 5, 0);
+  console.log(heroCameraPos);
+  app.camera.position.copy(heroCameraPos);
+  // app.camera.position.set(8.8, 1.77, -5);
+
+  setupKeyControls();
 };
 
 const animate = () => {
   requestAnimationFrame(animate);
+
+  if (app.moveLeft) {
+    app.hero.position.z += 0.1;
+    app.camera.position.z += 0.1;
+    app.camera.lookAt(0, app.hero.position.y, app.hero.position.z);
+  } else if (app.moveRight) {
+    app.hero.position.z -= 0.1;
+    app.camera.position.z -= 0.1;
+    app.camera.lookAt(0, app.hero.position.y, app.hero.position.z);
+  }
 
   if (app.rightLaneCars.length !== 0 && app.rightLaneCars[0].position.x > 50) {
     removeObject3D(app.rightLaneCars[0]);
@@ -165,6 +187,38 @@ const removeObject3D = (object) => {
   }
   // the parent might be the scene or another Object3D, but it is sure to be removed this way
   return true;
+};
+
+const setupKeyControls = () => {
+  document.onkeydown = function (e) {
+    switch (e.keyCode) {
+      case 65: // a.
+        app.moveLeft = true;
+        app.moveRight = false;
+        break;
+      case 68: // d.
+        app.moveLeft = false;
+        app.moveRight = true;
+        break;
+      // case 87:  // w.
+      //   cube.rotation.x -= 0.1;
+      //   break;
+      // case 83:  // s
+      //   cube.rotation.z += 0.1;
+      //   break;
+    }
+  };
+
+  document.onkeyup = function (e) {
+    switch (e.keyCode) {
+      case 65: // a.
+        app.moveLeft = false;
+        break;
+      case 68: // d.
+        app.moveRight = false;
+        break;
+    }
+  };
 };
 
 init();

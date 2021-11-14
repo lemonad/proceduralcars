@@ -353,30 +353,30 @@ export function proceduralCar(withLights = false) {
 
   if (withLights) {
     const leftHeadlight = new SpotLight(
-      0xffffff,
+      0xffffaa,
       1, // Intensity.
-      20, // Maximum distance.
-      Math.PI / 20, // Angle.
+      30, // Maximum distance.
+      Math.PI / 6, // Angle.
       0.5, // Penumbra.
-      2, // Decay (2 is physically correct).
+      1, // Decay (2 is physically correct).
     );
     leftHeadlight.position.set(p1.x, p1.y + 0.2, p1.z + 0.2);
     leftHeadlight.castShadow = true;
-    leftHeadlight.target.position.set(p1.x - 1, p1.y + 0.12, p1.z + 0.2);
+    leftHeadlight.target.position.set(p1.x - 0.5, p1.y + 0.02, p1.z + 0.2);
     car.add(leftHeadlight);
     car.add(leftHeadlight.target);
 
     const rightHeadlight = new SpotLight(
-      0xffffff,
+      0xffffaa,
       1, // Intensity.
-      20, // Maximum distance.
-      Math.PI / 20, // Angle.
+      30, // Maximum distance.
+      Math.PI / 6, // Angle.
       0.5, // Penumbra.
-      2, // Decay (2 is physically correct).
+      1, // Decay (2 is physically correct).
     );
     rightHeadlight.position.set(p1z.x, p1z.y + 0.2, p1z.z - 0.2);
     rightHeadlight.castShadow = true;
-    rightHeadlight.target.position.set(p1z.x - 1, p1z.y + 0.12, p1z.z - 0.2);
+    rightHeadlight.target.position.set(p1z.x - 0.5, p1z.y + 0.02, p1z.z - 0.2);
     car.add(rightHeadlight);
     car.add(rightHeadlight.target);
 
@@ -419,5 +419,10 @@ export function proceduralCar(withLights = false) {
 
   const root = new Object3D();
   root.add(car);
+  root.driverPos = new Vector3(
+    (p3.x + p4.x) / 2,
+    (p3.y + p4.y * 3) / 4 + frontWheelRadius,
+    (p3.z + p3z.z * 3) / 4,
+  );
   return root;
 }
