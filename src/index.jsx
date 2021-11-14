@@ -1,19 +1,28 @@
 import {
+  AmbientLight,
+  CameraHelper,
   Color,
   DirectionalLight,
+  Fog,
   Object3D,
+  OrthographicCamera,
+  PCFSoftShadowMap,
   PerspectiveCamera,
   Scene,
   WebGLRenderer,
 } from "three";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass.js";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass.js";
+import { BloomPass } from "three/examples/jsm/postprocessing/BloomPass.js";
+import { FilmPass } from "three/examples/jsm/postprocessing/FilmPass.js";
 import { proceduralCar } from "./car";
 import { road } from "./road";
+import { FisheyeShader } from "./FisheyeShader";
 
 const useLightHelpers = false;
 
-const verticalFov = 40;
+const verticalFov = 100;
 const aspectRatio = window.innerWidth / window.innerHeight;
 const nearDistance = 0.1;
 const farDistance = 1000;
@@ -24,6 +33,7 @@ let app = {
   renderer: null,
   camera: null,
   composer: null,
+  hero: null,
   leftLaneCars: [],
   rightLaneCars: [],
   lightHelpers: [],
@@ -32,32 +42,62 @@ let app = {
 const init = () => {
   app.scene = new Scene();
   app.scene.background = new Color(0x348868);
+  app.scene.fog = new Fog(0x348868, 45, 55);
+
   app.camera = new PerspectiveCamera(
     verticalFov,
     aspectRatio,
     nearDistance,
     farDistance,
   );
-  app.camera.position.set(20, 10, 20);
+  app.camera.position.set(10, 5, 0);
+  app.camera.enableRotate = true;
   app.camera.lookAt(0, 0, 0);
+  app.camera.rotation.z = Math.PI / 2;
   app.renderer = new WebGLRenderer();
   app.renderer.setSize(window.innerWidth, window.innerHeight);
+  app.renderer.shadowMap.enabled = true;
+  app.renderer.shadowMap.type = PCFSoftShadowMap; // default THREE.PCFShadowMap
+
+  console.log("Using WebGL2:", app.renderer.capabilities.isWebGL2);
 
   app.composer = new EffectComposer(app.renderer);
   const renderPass = new RenderPass(app.scene, app.camera);
   app.composer.addPass(renderPass);
 
+  const fisheyePass = new ShaderPass(FisheyeShader);
+  app.composer.addPass(fisheyePass);
+
+  // const bloomPass = new BloomPass(1.0, 25, 1.0, 256);
+  // app.composer.addPass(bloomPass);
+
+  const filmPass = new FilmPass(0.2, 0, 0, false);
+  app.composer.addPass(filmPass);
+
   app.el.appendChild(app.renderer.domElement);
 
+  const ambientLight = new AmbientLight(0x404040); // soft white light
+  app.scene.add(ambientLight);
+
   const color = 0xffffff;
-  const intensity = 1.0;
+  const intensity = 0.5;
   const light = new DirectionalLight(color, intensity);
+  light.position.set(0.0, 4, -2.8);
   light.castShadow = true;
-  light.position.set(20, 20, 40);
+
+  light.shadow.mapSize.width = 512; // default
+  light.shadow.mapSize.height = 512; // default
+
+  light.shadow.camera = new OrthographicCamera(-50, 50, 50, -50, 0.5, 1000);
   app.scene.add(light);
+  //app.scene.add(new CameraHelper(light.shadow.camera));
 
   const roadMesh = road();
   app.scene.add(roadMesh);
+
+  app.hero = proceduralCar(true);
+  app.hero.position.set(9, 0, -5);
+  app.scene.add(app.hero);
 };
 
 const animate = () => {
@@ -80,7 +120,7 @@ const animate = () => {
   }
 
   for (const c of app.rightLaneCars) {
-    c.position.x += 0.15;
+    c.position.x += 0.1;
   }
 
   if (app.leftLaneCars.length !== 0 && app.leftLaneCars[0].position.x < -50) {
@@ -99,7 +139,7 @@ const animate = () => {
   }
 
   for (const c of app.leftLaneCars) {
-    c.position.x -= 0.2;
+    c.position.x -= 0.12;
   }
 
   app.composer.render();

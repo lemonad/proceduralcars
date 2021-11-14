@@ -24,7 +24,7 @@ export function road() {
 
   const pavementMaterial = new MeshPhongMaterial({
     color: 0x666666,
-    specular: 0x666666,
+    specular: 0x0,
   });
   var midLineMaterial = new MeshPhongMaterial({
     color: 0xddcc00,
@@ -35,6 +35,7 @@ export function road() {
 
   const pavementGeometry = new PlaneGeometry(11.5, 100);
   const pavement = new Mesh(pavementGeometry, pavementMaterial);
+  pavement.receiveShadow = true;
   root.add(pavement);
 
   const leftSideLineGeometry = new PlaneGeometry(0.25, 100).translate(
@@ -43,6 +44,7 @@ export function road() {
     0.1,
   );
   const leftSideLine = new Mesh(leftSideLineGeometry, sideLineMaterial);
+  leftSideLine.receiveShadow = true;
   root.add(leftSideLine);
   const rightSideLineGeometry = new PlaneGeometry(0.25, 100).translate(
     4,
@@ -50,10 +52,12 @@ export function road() {
     0.1,
   );
   const rightSideLine = new Mesh(rightSideLineGeometry, sideLineMaterial);
+  rightSideLine.receiveShadow = true;
   root.add(rightSideLine);
 
   const midLineGeometry = new PlaneGeometry(0.25, 2.75);
   const midLine = new Mesh(midLineGeometry, midLineMaterial);
+  midLine.receiveShadow = true;
 
   let d = -49;
   while (d < 50) {

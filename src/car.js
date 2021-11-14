@@ -253,12 +253,16 @@ export function proceduralCar(withLights = false) {
   carColor.setHex(Math.random() * 0xffffff);
   const carMaterial = new MeshPhongMaterial({
     color: carColor,
+    specular: carColor,
     side: DoubleSide,
   });
   const tireMaterial = new MeshPhongMaterial({
     color: 0x222222,
   });
   const car = new Mesh(geometry, carMaterial);
+  car.castShadow = true;
+  car.receiveShadow = false;
+
   const backLeftTireGeometry = new CylinderGeometry(
     rearWheelRadius,
     rearWheelRadius,
